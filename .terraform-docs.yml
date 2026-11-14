@@ -1,0 +1,14 @@
+header-from: README.md
+output:
+  formats:
+    - format: table
+      indent: 2
+  target: README.md
+sort:
+  enabled: true
+  keys:
+    - name
+    - input
+    - output
+    - type
+    - default
