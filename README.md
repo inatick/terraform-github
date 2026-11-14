@@ -106,3 +106,6 @@ repositories = {
 | `enforce_admins` | `true` | Branch protection admin enforcement |
 | `allows_force_pushes` | `false` | Allow force pushes on protected branches |
 | `allows_deletions` | `false` | Allow deletions on protected branches |
+
+<!-- BEGIN_TF_DOCS -->
+<!-- END_TF_DOCS -->

@@ -1,14 +1,35 @@
+# Pre-commit hooks for aws-backup, copied from aws-oidc-factory (OpenTofu).
+# Install: pip install pre-commit && pre-commit install
+default_install_hook_types:
+  - pre-commit
+  - commit-msg
+# Hooks without their own `stages` run only at pre-commit, not again at
+# commit-msg (conventional-pre-commit sets stages: [commit-msg] itself).
+default_stages: [pre-commit]
+
 repos:
-  - repo: local
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
     hooks:
-      - id: terraform-docs
-        name: terraform-docs
-        entry: terraform-docs markdown .
-        language: system
-        pass_filenames: false
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-json
+      - id: check-merge-conflict
+      - id: detect-private-key
+
+  - repo: https://github.com/tofuutils/pre-commit-opentofu
+    rev: v2.4.2
+    hooks:
+      - id: tofu_docs
+      - id: tofu_fmt
+      - id: tofu_validate
+      - id: tofu_tflint
+        args:
+          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
 
   - repo: https://github.com/compilerla/conventional-pre-commit
-    rev: v3.1.0
+    rev: v4.5.0
     hooks:
       - id: conventional-pre-commit
         stages: [commit-msg]
+        args: []

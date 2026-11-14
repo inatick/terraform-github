@@ -1,6 +1,16 @@
 variable "repository_name" {
   type        = string
   description = "The name of the repository"
+
+  validation {
+    condition     = length(var.repository_name) >= 1
+    error_message = "The repository name must be at least 1 character long."
+  }
+
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9-]+$", var.repository_name))
+    error_message = "The repository name can only contain alphanumeric characters, hyphens, and underscores."
+  }
 }
 
 variable "description" {
@@ -41,13 +51,49 @@ variable "has_branch_protection" {
 
 variable "branch_protection_config" {
   type = object({
-    branch             = string
-    enforce_admins     = bool
-    allows_force_pushes = bool
-    allows_deletions    = bool
-    required_pull_request_reviews = boolean | null
-    required_status_checks = boolean | null
+    branch                        = string
+    enforce_admins                = bool
+    allows_force_pushes           = bool
+    allows_deletions              = bool
+    required_pull_request_reviews = optional(bool)
+    required_status_checks        = optional(bool)
   })
-  default = null
+  default     = null
   description = "Configuration for branch protection"
+}
+
+variable "has_issues" {
+  type        = bool
+  default     = true
+  description = "Whether issues are enabled"
+}
+
+variable "has_projects" {
+  type        = bool
+  default     = true
+  description = "Whether projects are enabled"
+}
+
+variable "has_wiki" {
+  type        = bool
+  default     = true
+  description = "Whether the wiki is enabled"
+}
+
+variable "is_template" {
+  type        = bool
+  default     = false
+  description = "Whether the repository is a template"
+}
+
+variable "gitignore_template" {
+  type        = string
+  default     = ""
+  description = "The gitignore template to use"
+}
+
+variable "license_template" {
+  type        = string
+  default     = ""
+  description = "The license template to use"
 }
