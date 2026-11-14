@@ -15,23 +15,23 @@ resource "github_organization" "this" {
 }
 
 resource "github_organization_settings" "this" {
-  two_factor_authentication     = var.settings.two_factor_authentication
-  verify_commit_signatures      = var.settings.verify_commit_signatures
-  block_forks                   = var.settings.block_forks
-  sso_authentication            = var.settings.sso_authentication
-  security_events               = var.settings.security_events
-  maintenance_period            = var.settings.maintenance_period
-  content_scanning              = var.settings.content_scanning
-  audit_log_streaming           = var.settings.audit_log_streaming
-  code_scanning                 = var.settings.code_scanning
-  secret_scanning               = var.settings.secret_scanning
-  dependency_graph               = var.settings.dependency_graph
-  hackerone_integration         = var.settings.hackerone_integration
-  ip_allow_list                 = var.settings.ip_allow_list
-  community_profile             = var.settings.community_profile
-  plan_settings                 = var.settings.plan_settings
-  repository_vulnerabilities    = var.settings.repository_vulnerabilities
-  security_governance           = var.settings.security_governance
+  two_factor_authentication  = var.settings.two_factor_authentication
+  verify_commit_signatures   = var.settings.verify_commit_signatures
+  block_forks                = var.settings.block_forks
+  sso_authentication         = var.settings.sso_authentication
+  security_events            = var.settings.security_events
+  maintenance_period         = var.settings.maintenance_period
+  content_scanning           = var.settings.content_scanning
+  audit_log_streaming        = var.settings.audit_log_streaming
+  code_scanning              = var.settings.code_scanning
+  secret_scanning            = var.settings.secret_scanning
+  dependency_graph           = var.settings.dependency_graph
+  hackerone_integration      = var.settings.hackerone_integration
+  ip_allow_list              = var.settings.ip_allow_list
+  community_profile          = var.settings.community_profile
+  plan_settings              = var.settings.plan_settings
+  repository_vulnerabilities = var.settings.repository_vulnerabilities
+  security_governance        = var.settings.security_governance
 }
 
 resource "github_team" "this" {
