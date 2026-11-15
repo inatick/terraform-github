@@ -1,8 +1,7 @@
 org_config = {
   name = "my-org"
   settings = {
-    two_factor_requirement = true
-    public_repo_creation   = "DISABLED"
+    billing_email = "my@example.com"
   }
   teams = {
     "engineering" = {
@@ -17,11 +16,15 @@ org_config = {
   projects = ["Project Alpha", "Project Beta"]
   organization_rulesets = {
     "main-rule" = {
-      name       = "Protect all main branches"
-      target     = "organization"
-      entity_ids = []
+      name         = "Protect all main branches"
+      target       = "branch"
+      entity_ids   = []
       rules_config = {
-        # Placeholder for complex rules logic
+        required_pull_request_review = {
+          dismiss_stale_reviews           = true
+          require_last_push_approval      = false
+          require_approving_review_count = 1
+        }
       }
     }
   }
