@@ -16,13 +16,13 @@ org_config = {
   projects = ["Project Alpha", "Project Beta"]
   organization_rulesets = {
     "main-rule" = {
-      name         = "Protect all main branches"
-      target       = "branch"
-      entity_ids   = []
+      name       = "Protect all main branches"
+      target     = "branch"
+      entity_ids = []
       rules_config = {
         required_pull_request_review = {
-          dismiss_stale_reviews           = true
-          require_last_push_approval      = false
+          dismiss_stale_reviews          = true
+          require_last_push_approval     = false
           require_approving_review_count = 1
         }
       }

@@ -49,8 +49,8 @@ variable "settings" {
 
 variable "teams" {
   type = map(object({
-    description = optional(string, "A description of the team")
-    members     = optional(list(string), [])
+    description          = optional(string, "A description of the team")
+    members              = optional(list(string), [])
     privacy              = optional(string)
     notification_setting = optional(string)
     parent_team_id       = optional(string)

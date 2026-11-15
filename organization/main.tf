@@ -64,9 +64,9 @@ resource "github_team_membership" "this" {
     ]) : "${pair.team}-${pair.member}" => pair
   }
 
-  team_id   = github_team.this[each.value.team].id
-  username   = each.value.member
-  role       = "member"
+  team_id  = github_team.this[each.value.team].id
+  username = each.value.member
+  role     = "member"
 }
 
 # Example of managing organization-level rulesets

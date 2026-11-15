@@ -27,11 +27,11 @@ variable "repositories" {
 
 variable "org_config" {
   type = object({
-    name = string
+    name     = string
     settings = map(any)
     teams = map(object({
-      description = optional(string, "A description of the team")
-      members     = optional(list(string), [])
+      description          = optional(string, "A description of the team")
+      members              = optional(list(string), [])
       privacy              = optional(string)
       notification_setting = optional(string)
       parent_team_id       = optional(string)
