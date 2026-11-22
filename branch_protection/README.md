@@ -20,18 +20,20 @@ module "branch_protection" {
 }
 ```
 
+<!-- BEGIN_TF_DOCS -->
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|----------|
-| repository_id | The ID of the repository | `number` | - | yes |
-| branch | The branch to protect | `string` | - | yes |
-| enforce_admins | Whether to enforce administrator privileges | `bool` | `true` | no |
-| allows_force_pushes | Whether to allow force pushes | `bool` | `false` | no |
-| allows_deletions | Whether to allow deletions | `bool` | `false` | no |
-| required_pull_request_reviews | Required pull request reviews configuration | `object` | `null` | no |
-| required_status_checks | Required status checks configuration | `object` | `null` | no |
+| ---- | ----------- | ---- | ------- | :------: |
+| <a name="input_allows_deletions"></a> [allows\_deletions](#input\_allows\_deletions) | Whether to allow deletions | `bool` | `false` | no |
+| <a name="input_allows_force_pushes"></a> [allows\_force\_pushes](#input\_allows\_force\_pushes) | Whether to allow force pushes | `bool` | `false` | no |
+| <a name="input_branch"></a> [branch](#input\_branch) | The branch to protect | `string` | n/a | yes |
+| <a name="input_enforce_admins"></a> [enforce\_admins](#input\_enforce\_admins) | Whether to enforce administrator privileges | `bool` | `true` | no |
+| <a name="input_repository_id"></a> [repository\_id](#input\_repository\_id) | The ID of the repository | `number` | n/a | yes |
+| <a name="input_required_pull_request_reviews"></a> [required\_pull\_request\_reviews](#input\_required\_pull\_request\_reviews) | Required pull request reviews configuration | <pre>object({<br/>    dismiss_stale_reviews           = bool<br/>    required_approving_review_count = number<br/>  })</pre> | `null` | no |
+| <a name="input_required_status_checks"></a> [required\_status\_checks](#input\_required\_status\_checks) | Required status checks configuration | <pre>object({<br/>    diameter_context = bool<br/>    strict           = bool<br/>    contexts         = list(string)<br/>  })</pre> | `null` | no |
 
 ## Outputs
 
-*(No outputs defined for this module)*
+No outputs.
+<!-- END_TF_DOCS -->

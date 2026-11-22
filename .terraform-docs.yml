@@ -1,14 +1,15 @@
-header-from: README.md
+formatter: markdown
+
+sections:
+  show-all: false
+  show:
+    - inputs
+    - outputs
+
 output:
-  formats:
-    - format: table
-      indent: 2
-  target: README.md
-sort:
-  enabled: true
-  keys:
-    - name
-    - input
-    - output
-    - type
-    - default
+  file: README.md
+  mode: inject
+  template: |-
+    <!-- BEGIN_TF_DOCS -->
+    {{ .Content }}
+    <!-- END_TF_DOCS -->

@@ -108,4 +108,11 @@ repositories = {
 | `allows_deletions` | `false` | Allow deletions on protected branches |
 
 <!-- BEGIN_TF_DOCS -->
+## Inputs
+
+No inputs.
+
+## Outputs
+
+No outputs.
 <!-- END_TF_DOCS -->

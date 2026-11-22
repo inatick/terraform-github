@@ -19,6 +19,12 @@ variable "description" {
   description = "Description of the repository"
 }
 
+variable "archived" {
+  type        = bool
+  default     = true
+  description = "Whether the repository is archived"
+}
+
 variable "is_private" {
   type        = bool
   default     = true
@@ -66,6 +72,12 @@ variable "has_issues" {
   type        = bool
   default     = true
   description = "Whether issues are enabled"
+}
+
+variable "has_discussions" {
+  type        = bool
+  default     = true
+  description = "Whether discussions are enabled"
 }
 
 variable "has_projects" {
