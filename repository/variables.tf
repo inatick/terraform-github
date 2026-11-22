@@ -21,7 +21,7 @@ variable "description" {
 
 variable "archived" {
   type        = bool
-  default     = true
+  default     = false
   description = "Whether the repository is archived"
 }
 
@@ -82,13 +82,13 @@ variable "has_discussions" {
 
 variable "has_projects" {
   type        = bool
-  default     = true
+  default     = false
   description = "Whether projects are enabled"
 }
 
 variable "has_wiki" {
   type        = bool
-  default     = true
+  default     = false
   description = "Whether the wiki is enabled"
 }
 
