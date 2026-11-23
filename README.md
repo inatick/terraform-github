@@ -103,6 +103,10 @@ repositories = {
 | `allow_squash_merge` | `true` | Allowed merge strategy |
 | `allow_merge_commit` | `false` | Allowed merge strategy |
 | `allow_rebase_merge` | `false` | Allowed merge strategy |
+| `allow_auto_merge` | `false` | Allow pull requests to merge automatically |
+| `allow_update_branch` | `false` | Suggest updating out-of-date pull request branches |
+| `delete_branch_on_merge` | `false` | Delete head branches after merge |
+| `archive_on_destroy` | `true` | Archive the repository instead of deleting it on destroy |
 | `enforce_admins` | `true` | Branch protection admin enforcement |
 | `allows_force_pushes` | `false` | Allow force pushes on protected branches |
 | `allows_deletions` | `false` | Allow deletions on protected branches |
