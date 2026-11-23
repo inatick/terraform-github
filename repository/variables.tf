@@ -49,6 +49,30 @@ variable "allow_rebase_merge" {
   description = "Whether rebase merge is allowed"
 }
 
+variable "allow_auto_merge" {
+  type        = bool
+  default     = false
+  description = "Whether pull requests can be set to merge automatically once requirements are met"
+}
+
+variable "allow_update_branch" {
+  type        = bool
+  default     = false
+  description = "Whether to suggest updating pull request branches that are behind the base branch"
+}
+
+variable "delete_branch_on_merge" {
+  type        = bool
+  default     = false
+  description = "Whether head branches are deleted automatically after pull requests are merged"
+}
+
+variable "archive_on_destroy" {
+  type        = bool
+  default     = true
+  description = "Whether to archive the repository instead of deleting it on destroy"
+}
+
 variable "has_branch_protection" {
   type        = bool
   default     = false
