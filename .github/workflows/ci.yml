@@ -1,0 +1,240 @@
+# CI for the terraform-github module library.
+#
+# Every PR job runs without secrets so that pull requests from forks work.
+# Branch rules should require only the `ci-ok` check; it aggregates the rest,
+# so jobs can be added or renamed without touching the ruleset.
+# Pushes to main that pass CI are released by semantic-release (release.yml).
+# See docs/architecture.md and docs/adr/.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Never cancel runs on main: a cancelled run could interrupt a release.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "0"
+  TERRAFORM_DOCS_VERSION: v0.25.1
+  TERRAFORM_DOCS_SHA256: 246f1a3211c9dbbed4c4af82b856dbd40acda78816ac8cdb5203c2869b659c76
+  TFLINT_VERSION: v0.66.0
+  ACTIONLINT_VERSION: 1.7.12
+  ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+  TRIVY_VERSION: v0.76.2
+
+jobs:
+  lint:
+    name: Lint (pre-commit)
+    runs-on: ubuntu-latest
+    env:
+      TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/.tf-plugin-cache
+      # The commit-msg hook is checked by pr-title.yml instead.
+      SKIP: conventional-pre-commit
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+
+      - name: Setup OpenTofu
+        uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version_file: .opentofu-version
+          tofu_wrapper: false
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@6ffdbaa3be476b3431f7275c26966ef32ff60337 # v6.3.2
+        with:
+          tflint_version: ${{ env.TFLINT_VERSION }}
+
+      - name: Install TFLint plugins
+        run: tflint --init --config="${GITHUB_WORKSPACE}/.tflint.hcl"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Install terraform-docs
+        run: |
+          tarball="terraform-docs-${TERRAFORM_DOCS_VERSION}-linux-amd64.tar.gz"
+          curl -fsSLo "${RUNNER_TEMP}/${tarball}" \
+            "https://github.com/terraform-docs/terraform-docs/releases/download/${TERRAFORM_DOCS_VERSION}/${tarball}"
+          echo "${TERRAFORM_DOCS_SHA256}  ${RUNNER_TEMP}/${tarball}" | sha256sum -c -
+          mkdir -p "${RUNNER_TEMP}/bin"
+          tar -xzf "${RUNNER_TEMP}/${tarball}" -C "${RUNNER_TEMP}/bin" terraform-docs
+          echo "${RUNNER_TEMP}/bin" >> "${GITHUB_PATH}"
+
+      - name: Create plugin cache directory
+        run: mkdir -p "${TF_PLUGIN_CACHE_DIR}"
+
+      - name: Run pre-commit
+        uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
+
+  test:
+    name: Test (${{ matrix.tool }}, ${{ matrix.dir }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tool: [tofu, terraform]
+        dir: [organization, repository, branch_protection, examples]
+    env:
+      TOOL: ${{ matrix.tool }}
+      DIR: ${{ matrix.dir }}
+      TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/.tf-plugin-cache
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup OpenTofu
+        if: matrix.tool == 'tofu'
+        uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version_file: .opentofu-version
+          tofu_wrapper: false
+
+      - name: Read Terraform version
+        if: matrix.tool == 'terraform'
+        id: terraform-version
+        run: echo "version=$(tr -d '[:space:]' < .terraform-version)" >> "${GITHUB_OUTPUT}"
+
+      - name: Setup Terraform
+        if: matrix.tool == 'terraform'
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ steps.terraform-version.outputs.version }}
+          terraform_wrapper: false
+
+      - name: Cache providers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.TF_PLUGIN_CACHE_DIR }}
+          key: providers-${{ runner.os }}-${{ matrix.tool }}-${{ matrix.dir }}-${{ hashFiles('**/versions.tf', 'examples/.terraform.lock.hcl') }}
+
+      - name: Init
+        working-directory: ${{ matrix.dir }}
+        run: |
+          mkdir -p "${TF_PLUGIN_CACHE_DIR}"
+          # The committed lock file in examples/ is an OpenTofu lock file, so
+          # check it is complete and unchanged in the OpenTofu leg only.
+          lock_args=""
+          if [ "${DIR}" = "examples" ] && [ "${TOOL}" = "tofu" ]; then
+            lock_args="-lockfile=readonly"
+          fi
+          "${TOOL}" init -backend=false ${lock_args}
+
+      - name: Validate
+        working-directory: ${{ matrix.dir }}
+        run: '"${TOOL}" validate'
+
+      - name: Test
+        working-directory: ${{ matrix.dir }}
+        run: '"${TOOL}" test'
+
+  security:
+    name: Security (Trivy IaC)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Trivy config scan (SARIF)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: ${{ env.TRIVY_VERSION }}
+          scan-type: config
+          scan-ref: .
+          format: sarif
+          output: trivy.sarif
+          exit-code: "0"
+
+      - name: Upload SARIF to code scanning
+        # Fork PRs get a read-only token and cannot upload results.
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: github/codeql-action/upload-sarif@915412ff23e8b7659517e607487dbeae018f2934 # v4.39.5
+        with:
+          sarif_file: trivy.sarif
+          category: trivy-config
+
+      - name: Trivy config scan (fail on HIGH/CRITICAL)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: ${{ env.TRIVY_VERSION }}
+          skip-setup-trivy: true
+          scan-type: config
+          scan-ref: .
+          format: table
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+
+  actions-lint:
+    name: Lint workflows (actionlint, zizmor)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: actionlint
+        run: |
+          tarball="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl -fsSLo "${RUNNER_TEMP}/${tarball}" \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/${tarball}"
+          echo "${ACTIONLINT_SHA256}  ${RUNNER_TEMP}/${tarball}" | sha256sum -c -
+          tar -xzf "${RUNNER_TEMP}/${tarball}" -C "${RUNNER_TEMP}" actionlint
+          "${RUNNER_TEMP}/actionlint" -color
+
+      - name: zizmor
+        uses: zizmorcore/zizmor-action@1b4550e929643b8b26a62303c6bd64814271a4f1 # v0.9.2
+        with:
+          version: 1.33.1
+          # Print findings and fail the job instead of uploading SARIF, so
+          # this works on fork PRs without security-events: write.
+          advanced-security: false
+          min-severity: medium
+
+  ci-ok:
+    name: ci-ok
+    if: always()
+    needs: [lint, test, security, actions-lint]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all jobs succeeded
+        env:
+          RESULTS: ${{ toJSON(needs.*.result) }}
+        run: |
+          echo "Job results: ${RESULTS}"
+          echo "${RESULTS}" | jq -e 'all(. == "success")' > /dev/null
+
+  release:
+    name: Release
+    needs: ci-ok
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    uses: ./.github/workflows/release.yml
+    secrets:
+      ORG_CLIENT_ID: ${{ secrets.ORG_CLIENT_ID }}
+      ORG_APP_PRIVATE_KEY: ${{ secrets.ORG_APP_PRIVATE_KEY }}
