@@ -1,10 +1,10 @@
 variable "repository_id" {
-  type        = number
-  description = "The ID of the repository"
+  type        = string
+  description = "The name or node ID of the repository (for example the repository module's repository_id output)"
 
   validation {
-    condition     = var.repository_id > 0
-    error_message = "The repository_id must be a positive integer."
+    condition     = length(var.repository_id) >= 1
+    error_message = "The repository_id must not be empty."
   }
 }
 

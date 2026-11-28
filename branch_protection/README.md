@@ -45,7 +45,7 @@ module "branch_protection" {
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
 | branch | The branch to protect | `string` | n/a | yes |
-| repository\_id | The ID of the repository | `number` | n/a | yes |
+| repository\_id | The name or node ID of the repository (for example the repository module's repository\_id output) | `string` | n/a | yes |
 | allows\_deletions | Whether to allow deletions | `bool` | `false` | no |
 | allows\_force\_pushes | Whether to allow force pushes | `bool` | `false` | no |
 | enforce\_admins | Whether to enforce administrator privileges | `bool` | `true` | no |
