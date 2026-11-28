@@ -28,8 +28,8 @@ only. Organization rulesets need GitHub Team.
   repository and its rules are configured together with no wiring.
 - Use the same `rules` object for repository and organization rulesets, so a
   rule definition works at either level.
-- Support rulesets only. Deprecate `branch_protection` in v1.1.0 and remove it
-  in v2.0.0, rather than keeping both mechanisms.
+- Support rulesets only. Remove `branch_protection` in v2.0.0, in the same
+  release that adds rulesets, rather than keeping both mechanisms.
 - Support only `branch` and `tag` targets and `active` or `disabled`
   enforcement. `push` rulesets and `evaluate` enforcement need paid or
   Enterprise plans and nobody needs them yet. Expose further rule blocks when a
@@ -40,8 +40,10 @@ only. Organization rulesets need GitHub Team.
 ## Consequences
 
 - One mechanism to learn, document and test.
-- Consumers on v1.x migrate by adding the equivalent ruleset and applying
-  before removing `branch_protection`, so the branch is never unprotected.
-  Rulesets and classic protection can exist together during the change.
+- Consumers on v1.x migrate by moving their other module calls to v2.0.0 and
+  adding the equivalent ruleset, while their `branch_protection` calls stay
+  pinned to v1.0.0. They apply, then remove `branch_protection` and apply
+  again, so the branch is never unprotected. Rulesets and classic protection
+  can exist together during the change.
 - On GitHub Free, private repositories can't be protected by either mechanism,
   so removing classic protection loses nothing there.

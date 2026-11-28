@@ -105,24 +105,35 @@ automatically. Release notes are on the
 - the `organization` inputs `organization_rulesets` (use `rulesets`) and
   `projects`, which was never used
 
-Migrate in this order, so that no branch is ever unprotected and no
-repository is recreated:
+`v2.0.0` also adds repository rulesets, organization `rulesets` and the
+`repositories` module.
 
-1. **While still on `v1.1.x`**, add the equivalent ruleset for each
-   `branch_protection` call, through the `repository` module's `rulesets` or a
-   profile in `repositories`, and apply. Rulesets and classic protection can
-   exist together. For example:
+Migrate in this order, so that no branch is ever unprotected and no
+repository is recreated. Each module call has its own `?ref=`, so you can keep
+`branch_protection` on `v1.0.0` while the other modules move to `v2.0.0`:
+
+1. Bump the `repository` and `organization` module calls to `?ref=v2.0.0`.
+   Remove the inputs that no longer exist (`has_branch_protection`,
+   `branch_protection_config`, `projects`), and add the ruleset that replaces
+   each `branch_protection` call. Leave the `branch_protection` calls on
+   `?ref=v1.0.0` for now, and apply. Rulesets and classic protection can exist
+   together, so the branch stays protected throughout. For example:
 
    ```hcl
-   # v1: module "main_protection" { source = ".../branch_protection" ... }
-   rulesets = {
-     protect-default-branch = {
-       rules = {
-         pull_request = {
-           required_approving_review_count = 1
-           dismiss_stale_reviews_on_push   = true
+   module "repo" {
+     source = "git::https://github.com/inatick/terraform-github.git//repository?ref=v2.0.0"
+
+     repository_name = "api-service"
+     rulesets = {
+       # Replaces module "main_protection" (branch_protection, branch = "main").
+       protect-default-branch = {
+         rules = {
+           pull_request = {
+             required_approving_review_count = 1
+             dismiss_stale_reviews_on_push   = true
+           }
+           required_status_checks = { checks = [{ context = "ci-ok" }] }
          }
-         required_status_checks = { checks = [{ context = "ci-ok" }] }
        }
      }
    }
@@ -134,13 +145,11 @@ repository is recreated:
 2. Remove the `branch_protection` module calls and apply. The plan should
    destroy only the `github_branch_protection` resources, which deletes the
    classic rules.
-3. Replace `organization_rulesets` with `rulesets` (on GitHub Team or above).
-   The old deletion-only ruleset (`github_organization_ruleset.this`) is
-   destroyed and the new ones are created. Remove `projects`,
-   `has_branch_protection` and `branch_protection_config` from your module
-   calls.
-4. Bump `?ref=` to `v2.0.0`. The plan should show no changes to repositories.
-5. Optionally, move per-repository `module "repository"` calls into the
+3. If you used `organization_rulesets`, replace it with `rulesets` (GitHub
+   Team or above). The old deletion-only ruleset
+   (`github_organization_ruleset.this`) is destroyed and the new ones are
+   created. Do this in the same change as step 1 for the `organization` module.
+4. Optionally, move per-repository `module "repository"` calls into the
    `repositories` module with `moved` blocks. See
    [repositories/README.md](repositories/README.md#moving-existing-repositories-into-this-module).
    Recreating a repository would archive it, so check that the plan shows
