@@ -7,7 +7,7 @@
 
 `terraform-github-repo` had three competing release mechanisms (release-please,
 semantic-release and a hand-written tag script), and none of them worked end
-to end. This repository is already in use, and tag `v0.0.1` exists.
+to end. This repository is already in use, and tags `v0.0.1` and `v0.1.0` exist (no GitHub Releases).
 
 ## Decision
 
@@ -16,7 +16,7 @@ to end. This repository is already in use, and tag `v0.0.1` exists.
   configured in `.releaserc.json` with the `conventionalcommits` preset and the
   plugins `commit-analyzer`, `release-notes-generator` and `github`.
 - **One version for the whole repository.** Tags are `vX.Y.Z` (the same format
-  as `v0.0.1`). Consumers reference `//<module>?ref=vX.Y.Z`. Per-module
+  as the existing tags). Consumers reference `//<module>?ref=vX.Y.Z`. Per-module
   versions are explicitly not wanted.
 - **No commit back to `main`.** The `changelog` and `git` plugins aren't used.
   The GitHub Release notes are the changelog, so the release bot never needs to
@@ -34,7 +34,7 @@ to end. This repository is already in use, and tag `v0.0.1` exists.
 
 ## Consequences
 
-- Versioning continues from `v0.0.1`. The first change to standardise the
+- Versioning continues from the latest tag, `v0.1.0`. The first change to standardise the
   modules is breaking (root config removed, `required_version >= 1.8.0`), so it
   is released as `v1.0.0`.
 - The PR title matters: a mislabelled title produces the wrong version bump.

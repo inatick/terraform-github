@@ -65,7 +65,7 @@ merge to `main` that contains a `fix:` or `feat:` change is released
 automatically. Release notes are on the
 [Releases](https://github.com/inatick/terraform-github/releases) page.
 
-**Upgrading from `v0.0.1`** (breaking changes in `v1.0.0`):
+**Upgrading from `v0.x`** (`v0.0.1`, `v0.1.0`) (breaking changes in `v1.0.0`):
 
 - The repository root is no longer a root configuration. The placeholder
   `main.tf` was removed. Reference the modules by subdirectory as shown above.
