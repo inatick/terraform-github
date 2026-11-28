@@ -6,9 +6,8 @@ released tag. This repo has no backend and manages no real infrastructure.
 
 ## Glossary
 
-- **Module**: one of `organization/`, `repository/`, `repositories/` and the
-  deprecated `branch_protection/`. A child module with no provider or backend
-  blocks.
+- **Module**: one of `organization/`, `repository/` and `repositories/`. A
+  child module with no provider or backend blocks.
 - **Consumer**: a root configuration elsewhere (for example the repo that
   manages the `inatick` org) that calls these modules and runs plan and apply.
 - **Example**: `examples/`, a root configuration with placeholder values that

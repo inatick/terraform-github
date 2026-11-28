@@ -60,19 +60,6 @@ resource "github_team_membership" "this" {
   role     = "member"
 }
 
-# Deprecated: use var.rulesets (github_organization_ruleset.rulesets).
-resource "github_organization_ruleset" "this" {
-  for_each = var.organization_rulesets
-
-  name        = each.value.name
-  target      = each.value.target
-  enforcement = "active"
-
-  rules {
-    deletion = true
-  }
-}
-
 resource "github_organization_ruleset" "rulesets" {
   for_each = var.rulesets
 

@@ -83,27 +83,6 @@ variable "archive_on_destroy" {
   nullable    = false
 }
 
-# tflint-ignore: terraform_unused_declarations
-variable "has_branch_protection" {
-  type        = bool
-  default     = false
-  description = "Deprecated: not used; use the rulesets input instead. Will be removed in the next major release."
-}
-
-# tflint-ignore: terraform_unused_declarations
-variable "branch_protection_config" {
-  type = object({
-    branch                        = string
-    enforce_admins                = bool
-    allows_force_pushes           = bool
-    allows_deletions              = bool
-    required_pull_request_reviews = optional(bool)
-    required_status_checks        = optional(bool)
-  })
-  default     = null
-  description = "Deprecated: not used; use the rulesets input instead. Will be removed in the next major release."
-}
-
 variable "has_issues" {
   type        = bool
   default     = true

@@ -18,7 +18,6 @@ real state. Use the modules from your own root configuration.
 | [`organization`](organization/README.md) | Organization settings, teams and memberships, organization rulesets |
 | [`repository`](repository/README.md) | One repository and its rulesets (private and squash-only by default) |
 | [`repositories`](repositories/README.md) | Many repositories from shared **profiles**: define settings and rulesets once, apply them everywhere, override per repository |
-| [`branch_protection`](branch_protection/README.md) | **Deprecated**, removed in v2.0.0. A classic branch protection rule. Use rulesets instead. |
 
 [`examples/`](examples/README.md) shows `repositories` with profiles and the
 `organization` module, and CI plans it against a mocked provider.
@@ -29,7 +28,7 @@ Reference a module by its subdirectory and pin a released tag:
 
 ```hcl
 module "repos" {
-  source = "git::https://github.com/inatick/terraform-github.git//repositories?ref=v1.1.0"
+  source = "git::https://github.com/inatick/terraform-github.git//repositories?ref=v2.0.0"
 
   owner            = "my-org"
   default_profiles = ["protected"]
@@ -96,15 +95,56 @@ automatically. Release notes are on the
   ID), which fixes passing `module.<repo>.repository_id` into it. Numeric values
   still work.
 
-**Deprecated in `v1.1.0`, removed in `v2.0.0`:**
+**Upgrading to `v2`** (from `v1.x`):
 
-- The `branch_protection` module. Replace it with a ruleset: add the ruleset
-  and apply, then remove the `branch_protection` call and apply again, so the
-  branch is never unprotected.
-- `repository` inputs `has_branch_protection` and `branch_protection_config`
-  (never used).
-- `organization` inputs `organization_rulesets` (use `rulesets`) and `projects`
-  (never used).
+`v2.0.0` removes:
+
+- the `branch_protection` module (use rulesets)
+- the `repository` inputs `has_branch_protection` and
+  `branch_protection_config`, which were never used
+- the `organization` inputs `organization_rulesets` (use `rulesets`) and
+  `projects`, which was never used
+
+Migrate in this order, so that no branch is ever unprotected and no
+repository is recreated:
+
+1. **While still on `v1.1.x`**, add the equivalent ruleset for each
+   `branch_protection` call, through the `repository` module's `rulesets` or a
+   profile in `repositories`, and apply. Rulesets and classic protection can
+   exist together. For example:
+
+   ```hcl
+   # v1: module "main_protection" { source = ".../branch_protection" ... }
+   rulesets = {
+     protect-default-branch = {
+       rules = {
+         pull_request = {
+           required_approving_review_count = 1
+           dismiss_stale_reviews_on_push   = true
+         }
+         required_status_checks = { checks = [{ context = "ci-ok" }] }
+       }
+     }
+   }
+   ```
+
+   `enforce_admins = true` has no direct equivalent. Rulesets apply to
+   everyone who isn't a bypass actor, so leave `bypass_actors` empty to get the
+   same effect.
+2. Remove the `branch_protection` module calls and apply. The plan should
+   destroy only the `github_branch_protection` resources, which deletes the
+   classic rules.
+3. Replace `organization_rulesets` with `rulesets` (on GitHub Team or above).
+   The old deletion-only ruleset (`github_organization_ruleset.this`) is
+   destroyed and the new ones are created. Remove `projects`,
+   `has_branch_protection` and `branch_protection_config` from your module
+   calls.
+4. Bump `?ref=` to `v2.0.0`. The plan should show no changes to repositories.
+5. Optionally, move per-repository `module "repository"` calls into the
+   `repositories` module with `moved` blocks. See
+   [repositories/README.md](repositories/README.md#moving-existing-repositories-into-this-module).
+   Recreating a repository would archive it, so check that the plan shows
+   `has moved to` and no create or destroy.
 
 ## Development
 

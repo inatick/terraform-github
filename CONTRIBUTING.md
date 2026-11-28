@@ -25,8 +25,8 @@ make ci              # pre-commit + validate + test, the same as CI's OpenTofu l
 - **Keep the code compatible with Terraform.** Don't use `.tofu` files or any
   OpenTofu-only syntax or features in modules. CI runs validate and test with
   both tools. See [ADR 0001](docs/adr/0001-opentofu-primary-terraform-compatible.md).
-- **No `provider` or `backend` blocks** in `organization/`, `repository/`,
-  `repositories/` or `branch_protection/`. Consumers configure the provider.
+- **No `provider` or `backend` blocks** in `organization/`, `repository/` or
+  `repositories/`. Consumers configure the provider.
 - **Shared types.** The ruleset type is copied in `repository/` and
   `repositories/`, the `rules` object also in `organization/`, and
   `repositories/`' settings type mirrors `repository/`'s inputs. Change every

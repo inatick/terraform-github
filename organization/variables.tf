@@ -60,24 +60,6 @@ variable "teams" {
   description = "A map of teams and their members"
 }
 
-# tflint-ignore: terraform_unused_declarations
-variable "projects" {
-  type        = list(string)
-  default     = []
-  description = "Deprecated: not used by this module and will be removed in a future major release."
-}
-
-variable "organization_rulesets" {
-  type = map(object({
-    name         = string
-    target       = string # e.g. "repository" or "organization"
-    entity_ids   = list(string)
-    rules_config = map(any)
-  }))
-  default     = {}
-  description = "Deprecated: only creates a ruleset that blocks deletion, and ignores entity_ids and rules_config. Use rulesets instead. Will be removed in the next major release."
-}
-
 variable "rulesets" {
   description = <<-EOT
     Organization rulesets, keyed by ruleset name. They need GitHub Team or

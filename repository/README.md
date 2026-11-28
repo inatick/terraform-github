@@ -11,7 +11,7 @@ To apply the same configuration to many repositories, use the
 
 ```hcl
 module "repo" {
-  source = "git::https://github.com/inatick/terraform-github.git//repository?ref=v1.1.0"
+  source = "git::https://github.com/inatick/terraform-github.git//repository?ref=v2.0.0"
 
   repository_name = "my-new-repo"
   description     = "A sample repository"
@@ -101,11 +101,6 @@ rulesets = {
 
 `archive_on_destroy` defaults to `true`, so removing a repository from your configuration archives it on GitHub instead of deleting it. The archived repository keeps its name: creating a repository with the same name later fails until you unarchive it (and import it) or delete it by hand. Set `archive_on_destroy = false` to delete repositories on destroy.
 
-## Deprecated inputs
-
-`has_branch_protection` and `branch_protection_config` are accepted but not
-used. Use `rulesets` instead. They will be removed in v2.0.0.
-
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
@@ -139,11 +134,9 @@ used. Use `rulesets` instead. They will be removed in v2.0.0.
 | allow\_update\_branch | Whether to suggest updating pull request branches that are behind the base branch | `bool` | `false` | no |
 | archive\_on\_destroy | Whether to archive the repository instead of deleting it on destroy | `bool` | `true` | no |
 | archived | Whether the repository is archived | `bool` | `false` | no |
-| branch\_protection\_config | Deprecated: not used; use the rulesets input instead. Will be removed in the next major release. | <pre>object({<br/>    branch                        = string<br/>    enforce_admins                = bool<br/>    allows_force_pushes           = bool<br/>    allows_deletions              = bool<br/>    required_pull_request_reviews = optional(bool)<br/>    required_status_checks        = optional(bool)<br/>  })</pre> | `null` | no |
 | delete\_branch\_on\_merge | Whether head branches are deleted automatically after pull requests are merged | `bool` | `false` | no |
 | description | Description of the repository | `string` | `""` | no |
 | gitignore\_template | The gitignore template to use | `string` | `""` | no |
-| has\_branch\_protection | Deprecated: not used; use the rulesets input instead. Will be removed in the next major release. | `bool` | `false` | no |
 | has\_discussions | Whether discussions are enabled | `bool` | `true` | no |
 | has\_issues | Whether issues are enabled | `bool` | `true` | no |
 | has\_projects | Whether projects are enabled | `bool` | `false` | no |

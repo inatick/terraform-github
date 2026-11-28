@@ -25,8 +25,6 @@ plan or apply ([ADR 0002](adr/0002-module-repo-ci-without-plan-apply.md)).
        │      repository      │──▶│ github_repository_ruleset │
        │  github_repository   │   │      (one per name)       │
        └──────────────────────┘   └───────────────────────────┘
-
-       branch_protection: deprecated in v1.1.0, removed in v2.0.0
 ```
 
 | Module | Resources | Inputs it depends on |
@@ -34,7 +32,6 @@ plan or apply ([ADR 0002](adr/0002-module-repo-ci-without-plan-apply.md)).
 | `organization` | `github_organization_settings`, `github_team`, `github_team_membership`, `github_organization_ruleset`, `data.github_organization` | none |
 | `repository` | `github_repository`, `github_repository_ruleset` | none |
 | `repositories` | `module.repository` per repository, `data.github_organization` (plan lookup) | `owner` |
-| `branch_protection` (deprecated) | `github_branch_protection` | `repository_id`: repository name or node ID |
 
 ### Profiles
 
@@ -80,7 +77,7 @@ Design constraints:
 
 ```
 .
-├── organization/ repository/ repositories/ branch_protection/
+├── organization/ repository/ repositories/
 │   ├── main.tf  variables.tf  outputs.tf  versions.tf
 │   ├── README.md            # hand-written intro + terraform-docs section
 │   └── tests/*.tftest.hcl   # native tests, mocked provider
@@ -103,8 +100,7 @@ Design constraints:
  │ ci.yml                                                                       │
  │  lint ─────────── pre-commit: fmt, tflint, docs and type drift, hygiene      │
  │  test (matrix) ── {tofu, terraform} × {organization, repository,             │
- │                   repositories, branch_protection, examples}: init,          │
- │                   validate, test                                             │
+ │                   repositories, examples}: init, validate, test              │
  │  security ─────── Trivy IaC: SARIF to code scanning, fail on HIGH/CRITICAL   │
  │  actions-lint ─── actionlint + zizmor                                        │
  │  ci-ok ────────── aggregate; the only check the branch rules require         │

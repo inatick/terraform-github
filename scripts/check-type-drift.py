@@ -19,9 +19,6 @@ EXCLUDED_INPUTS = {
     "repository_name",
     "description",
     "rulesets",
-    # Deprecated, not exposed through repositories/.
-    "has_branch_protection",
-    "branch_protection_config",
 }
 
 
