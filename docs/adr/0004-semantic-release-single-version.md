@@ -5,7 +5,7 @@
 
 ## Context
 
-`terraform-github-repo` had three competing release mechanisms (release-please,
+An earlier setup had three competing release mechanisms (release-please,
 semantic-release and a hand-written tag script), and none of them worked end
 to end. This repository is already in use, and tags `v0.0.1` and `v0.1.0` exist (no GitHub Releases).
 

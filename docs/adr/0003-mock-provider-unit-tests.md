@@ -5,8 +5,7 @@
 
 ## Context
 
-The earlier approach (in `terraform-github-repo`) ran only `validate` against a
-test harness. That proves the code type-checks, but never evaluates defaults,
+An earlier, validate-only approach ran `validate` against a test harness. That proves the code type-checks, but never evaluates defaults,
 conditionals, `for_each` fan-out or variable validation. Running tests against
 the live GitHub API would need secrets, which pull requests from forks don't
 get, and would be slow and flaky.
