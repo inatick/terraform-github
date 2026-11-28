@@ -1,4 +1,4 @@
-# Pre-commit hooks for aws-backup, copied from aws-oidc-factory (OpenTofu).
+# Pre-commit hooks for terraform-github (OpenTofu). CI runs the same hooks.
 # Install: pip install pre-commit && pre-commit install
 default_install_hook_types:
   - pre-commit
@@ -14,18 +14,30 @@ repos:
       - id: end-of-file-fixer
       - id: trailing-whitespace
       - id: check-json
+      - id: check-yaml
+      - id: check-added-large-files
       - id: check-merge-conflict
       - id: detect-private-key
 
   - repo: https://github.com/tofuutils/pre-commit-opentofu
     rev: v2.4.2
     hooks:
-      - id: tofu_docs
       - id: tofu_fmt
       - id: tofu_validate
       - id: tofu_tflint
         args:
           - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
+
+  # terraform-docs via the Makefile, so the BEGIN_TF_DOCS markers and
+  # .terraform-docs.yml are honoured (the tofu_docs hook uses its own markers).
+  - repo: local
+    hooks:
+      - id: terraform-docs
+        name: terraform-docs (make docs)
+        entry: make docs
+        language: system
+        files: (\.tf|\.terraform-docs\.yml)$
+        pass_filenames: false
 
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v4.5.0

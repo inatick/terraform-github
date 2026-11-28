@@ -1,0 +1,66 @@
+# Release with semantic-release. Called from ci.yml after `ci-ok` passes on a
+# push to main, so nothing is released unless CI is green.
+#
+# semantic-release reads the conventional commits since the last tag (the
+# squash-merged PR titles), tags vX.Y.Z and creates a GitHub Release with
+# generated notes. It never pushes commits back to main.
+# See docs/adr/0004-semantic-release-single-version.md.
+
+name: Release
+
+on:
+  workflow_call:
+    secrets:
+      ORG_CLIENT_ID:
+        required: true
+      ORG_APP_PRIVATE_KEY:
+        required: true
+
+permissions: {}
+
+jobs:
+  semantic-release:
+    name: semantic-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push tags, create releases
+      issues: write # comment on released issues
+      pull-requests: write # comment on released pull requests
+    concurrency:
+      group: release
+      cancel-in-progress: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # No dependency cache here: caches in release workflows are a
+      # cache-poisoning risk.
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify npm provenance and registry signatures
+        run: npm audit signatures
+
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
+        with:
+          client-id: ${{ secrets.ORG_CLIENT_ID }}
+          private-key: ${{ secrets.ORG_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+
+      - name: semantic-release
+        run: npx --no-install semantic-release
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}

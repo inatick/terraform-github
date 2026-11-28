@@ -1,122 +1,103 @@
-# GitHub Infrastructure Module (OpenTofu/Terraform)
+# terraform-github
 
-A comprehensive set of modules to manage your GitHub infrastructure, including organizations, teams, repositories, and branch protection rules.
+[![CI](https://github.com/inatick/terraform-github/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/inatick/terraform-github/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/inatick/terraform-github?sort=semver)](https://github.com/inatick/terraform-github/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## Project Structure
+Reusable OpenTofu modules for managing GitHub organizations, teams, repositories
+and branch protection. Built and tested with OpenTofu, and kept compatible with
+Terraform.
 
-```text
-.
-├── branch_protection/  # Module for branch protection rules
-├── organization/       # Module for organization, teams, and rulesets
-├── repository/          # Module for repository settings
-├── examples/
-│   ├── full_setup.tf   # Complete configuration example
-│   ├── terraform.tfvars # Configuration values for the example
-│   ├── providers.tf    # Provider configuration
-│   ├── variables.tf    # Variables for the example
-│   └── outputs.tf      # Outputs for the example
-└── README.md
-```
+This repository contains **modules only**. It has no backend and manages no
+real state. Use the modules from your own root configuration.
 
 ## Modules
 
-### 1. Repository Module (`repository/`)
-Configures base repository settings.
-- **Default Merge Strategy**: Optimized for **squash-merge only** to maintain a clean commit history.
-- **Customization**: Easily override merge settings (`merge_commit`, `rebase_merge`), visibility (`is_private`), and descriptions.
+| Module | Manages |
+|--------|---------|
+| [`organization`](organization/README.md) | Organization settings, teams and memberships, organization rulesets |
+| [`repository`](repository/README.md) | A repository's visibility, merge methods, features and templates (private and squash-only by default) |
+| [`branch_protection`](branch_protection/README.md) | A branch protection rule (admins included, no force pushes or deletions by default) |
 
-### 2. Branch Protection Module (`branch_protection/`)
-Applies granular protection rules to specific branches.
-- **Configurable Rules**:
-  - Require pull request reviews (with configurable review counts).
-  - Require status checks.
-  - Enforce administrator privileges.
-  - Disable force pushes and deletions.
-
-### 3. Organization Module (`organization/`)
-Manages the high-level structure of your organization.
-- **Organization Settings**: Control Two-Factor Authentication (2FA) requirements and public repository creation settings.
-- **Teams**: Create teams and manage memberships (users/members) within the organization.
-- **Projects**: Provision project management spaces.
-- **Organization Rulesets**: Apply organization-wide rulesets to enforce policies across the entire organization.
+[`examples/`](examples/README.md) wires all three together, and CI plans it
+against a mocked provider.
 
 ## Usage
 
-To use the complete example:
-
-1.  Navigate to the `examples/` directory:
-    ```bash
-    cd examples
-    ```
-2.  (Optional) Customize the `terraform.tfvars` file.
-3.  Run `tofu init` (or `terraform init`).
-4.  Run `tofu plan` to see the changes that will be applied.
-
-### Example `terraform.tfvars`
+Reference a module by its subdirectory and pin a released tag:
 
 ```hcl
-# Organization Configuration
-org_config = {
-  name  = "my-awesome-org"
-  settings = {
-    two_factor_requirement = true
-    public_repo_creation   = "DISABLED"
-  }
-  teams = {
-    "dev-team" = {
-      description = "Core developers"
-      members     = ["alice", "bob"]
-    }
-  }
-  projects = ["Project Alpha"]
-  organization_rulesets = {
-    "enforce-2fa" = {
-      name        = "Enforce 2FA"
-      target      = "organization"
-      entity_ids = []
-      rules_config = {}
-    }
-  }
+module "repo" {
+  source = "git::https://github.com/inatick/terraform-github.git//repository?ref=v1.0.0"
+
+  repository_name = "api-service"
+  description     = "The main API service"
 }
 
-# Repository Configuration
-repositories = {
-  "api-service" = {
-    name        = "api-service"
-    description = "The main API service"
-    is_private  = true
-    branch_protection = {
-      branch = "main"
-      required_pull_request_reviews = {
-        required_approving_review_count = 2
-      }
-    }
+module "main_protection" {
+  source = "git::https://github.com/inatick/terraform-github.git//branch_protection?ref=v1.0.0"
+
+  repository_id = module.repo.repository_id
+  branch        = "main"
+  required_pull_request_reviews = {
+    dismiss_stale_reviews           = true
+    required_approving_review_count = 1
   }
 }
 ```
 
+Configure the `integrations/github` provider in your root configuration, for
+example with `GITHUB_TOKEN` and `GITHUB_OWNER` in the environment. The modules
+don't contain provider blocks.
+
+## Compatibility
+
+| Tool | Supported | Tested in CI |
+|------|-----------|--------------|
+| OpenTofu (primary) | `>= 1.8.0` | version in [`.opentofu-version`](.opentofu-version) |
+| Terraform | `>= 1.8.0` | version in [`.terraform-version`](.terraform-version) |
+| `integrations/github` provider | `~> 6.0` | |
+
+## Versioning and upgrading
+
+The whole repository has one [semantic version](https://semver.org/). Every
+merge to `main` that contains a `fix:` or `feat:` change is released
+automatically. Release notes are on the
+[Releases](https://github.com/inatick/terraform-github/releases) page.
+
+**Upgrading from `v0.x`** (`v0.0.1`, `v0.1.0`) (breaking changes in `v1.0.0`):
+
+- The repository root is no longer a root configuration. The placeholder
+  `main.tf` was removed. Reference the modules by subdirectory as shown above.
+- `examples/full_setup.tf` is now `examples/main.tf`.
+- The modules now require OpenTofu or Terraform `>= 1.8.0`.
+- `branch_protection.repository_id` is now a `string` (repository name or node
+  ID), which fixes passing `module.<repo>.repository_id` into it. Numeric values
+  still work.
+
+## Development
+
+```bash
+mise install            # or install tofu, tflint, terraform-docs and pre-commit yourself
+pre-commit install      # installs the pre-commit and commit-msg hooks
+make ci                 # what CI runs: pre-commit, validate and test (OpenTofu)
+make test TOOL=terraform
+```
+
+Run `make help` to list all targets. See [CONTRIBUTING.md](CONTRIBUTING.md) for
+the commit convention and the release process, and
+[docs/architecture.md](docs/architecture.md) and [docs/adr/](docs/adr/) for
+design decisions.
+
 ## Defaults
 
-| Variable | Default Value | Description |
-|----------|---------------|-------------|
-| `is_private` | `true` | Repository visibility |
-| `allow_squash_merge` | `true` | Allowed merge strategy |
-| `allow_merge_commit` | `false` | Allowed merge strategy |
-| `allow_rebase_merge` | `false` | Allowed merge strategy |
-| `allow_auto_merge` | `false` | Allow pull requests to merge automatically |
-| `allow_update_branch` | `false` | Suggest updating out-of-date pull request branches |
-| `delete_branch_on_merge` | `false` | Delete head branches after merge |
-| `archive_on_destroy` | `true` | Archive the repository instead of deleting it on destroy |
-| `enforce_admins` | `true` | Branch protection admin enforcement |
-| `allows_force_pushes` | `false` | Allow force pushes on protected branches |
-| `allows_deletions` | `false` | Allow deletions on protected branches |
-
-<!-- BEGIN_TF_DOCS -->
-## Inputs
-
-No inputs.
-
-## Outputs
-
-No outputs.
-<!-- END_TF_DOCS -->
+| Variable | Module | Default | Description |
+|----------|--------|---------|-------------|
+| `is_private` | repository | `true` | Repository visibility |
+| `allow_squash_merge` | repository | `true` | Allowed merge strategy |
+| `allow_merge_commit` | repository | `false` | Allowed merge strategy |
+| `allow_rebase_merge` | repository | `false` | Allowed merge strategy |
+| `archive_on_destroy` | repository | `true` | Archive rather than delete on destroy |
+| `enforce_admins` | branch_protection | `true` | Admins are subject to the rule |
+| `allows_force_pushes` | branch_protection | `false` | Allow force pushes on protected branches |
+| `allows_deletions` | branch_protection | `false` | Allow deletion of protected branches |

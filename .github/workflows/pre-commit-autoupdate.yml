@@ -1,0 +1,64 @@
+# Weekly `pre-commit autoupdate` (Dependabot does not cover pre-commit hooks).
+# Opens a PR with the GitHub App token so that CI runs on it.
+
+name: pre-commit autoupdate
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: pre-commit-autoupdate
+  cancel-in-progress: false
+
+jobs:
+  autoupdate:
+    name: pre-commit autoupdate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
+        with:
+          client-id: ${{ secrets.ORG_CLIENT_ID }}
+          private-key: ${{ secrets.ORG_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: true # needed to push the update branch
+
+      - name: Setup Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+
+      - name: Run pre-commit autoupdate
+        run: |
+          pip install pre-commit==4.7.0
+          pre-commit autoupdate
+
+      - name: Open or update pull request
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          BRANCH: chore/pre-commit-autoupdate
+        run: |
+          if git diff --quiet; then
+            echo "Hooks are up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -C "${BRANCH}"
+          git commit -am "chore: update pre-commit hooks"
+          git push --force origin "${BRANCH}"
+          if [ -z "$(gh pr list --head "${BRANCH}" --state open --json number --jq '.[].number')" ]; then
+            gh pr create --head "${BRANCH}" --title "chore: update pre-commit hooks" \
+              --body "Automated \`pre-commit autoupdate\`. Check the CI results before merging."
+          fi

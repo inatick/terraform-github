@@ -48,3 +48,10 @@ variable "org_config" {
   default     = null
   description = "Organization and team configuration"
 }
+
+variable "github_token" {
+  type        = string
+  default     = null
+  sensitive   = true
+  description = "GitHub token for the provider. Leave null to use the GITHUB_TOKEN environment variable."
+}
