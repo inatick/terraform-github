@@ -1,18 +1,24 @@
-# Branch Protection Module
+# Branch protection module
 
-This Terraform module manages GitHub branch protection rules for a specific repository.
+Manages a classic branch protection rule for one branch (or pattern) of a
+repository. Defaults: admins are included, force pushes and deletions are
+blocked. Review and status-check requirements are added only when their
+inputs are set.
 
 ## Usage
 
 ```hcl
-module "branch_protection" {
-  source = "./modules/branch_protection"
+module "repo" {
+  source          = "git::https://github.com/inatick/terraform-github.git//repository?ref=v1.0.0"
+  repository_name = "my-new-repo"
+}
 
-  repository_id                 = 12345678
-  branch                        = "main"
-  enforce_admins                = true
-  allows_force_pushes           = false
-  allows_deletions              = false
+module "branch_protection" {
+  source = "git::https://github.com/inatick/terraform-github.git//branch_protection?ref=v1.0.0"
+
+  repository_id = module.repo.repository_id # repository name or node ID
+  branch        = "main"
+
   required_pull_request_reviews = {
     dismiss_stale_reviews           = true
     required_approving_review_count = 1

@@ -1,27 +1,31 @@
-# Organization Module
+# Organization module
 
-This Terraform module manages GitHub Organization resources and settings.
+Manages organization-level settings, teams and team memberships, and
+organization rulesets. Planning fails early if `org_name` does not exist.
 
 ## Usage
 
 ```hcl
 module "org" {
-  source   = "./modules/organization"
+  source   = "git::https://github.com/inatick/terraform-github.git//organization?ref=v1.0.0"
   org_name = "my-org"
 
   settings = {
-    two_factor_requirement = "enabled"
-    public_repo_creation   = "disabled"
+    billing_email                   = "billing@example.com"
+    members_can_create_repositories = false
   }
 
   teams = {
-    "engineering" = {
+    engineering = {
       description = "Engineering team"
       members     = ["user1", "user2"]
     }
   }
 }
 ```
+
+`settings.billing_email` is required by the GitHub provider. The `projects`
+input is deprecated and not used.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements

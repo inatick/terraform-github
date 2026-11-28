@@ -1,22 +1,33 @@
-# Repository Module
+# Repository module
 
-This Terraform module manages GitHub repositories with configurable settings for visibility, merge methods, and enabled features.
+Manages a single GitHub repository: visibility, merge methods, enabled
+features and templates. Defaults are opinionated: private, squash-merge only,
+archived (not deleted) on destroy.
 
 ## Usage
 
 ```hcl
 module "repo" {
-  source = "./modules/repository"
+  source = "git::https://github.com/inatick/terraform-github.git//repository?ref=v1.0.0"
 
   repository_name = "my-new-repo"
-  is_private      = true
   description     = "A sample repository"
+  is_private      = true
 }
 ```
+
+Pair it with the [branch_protection](../branch_protection) module by passing
+`module.repo.repository_id` as `repository_id`.
 
 ## Destroying a repository
 
 `archive_on_destroy` defaults to `true`, so removing a repository from your configuration archives it on GitHub instead of deleting it. The archived repository keeps its name: creating a repository with the same name later fails until you unarchive it (and import it) or delete it by hand. Set `archive_on_destroy = false` to delete repositories on destroy.
+
+## Deprecated inputs
+
+`has_branch_protection` and `branch_protection_config` are accepted but not
+used. Use the `branch_protection` module instead. They will be removed in a
+future major release.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
