@@ -17,7 +17,7 @@ variable "profiles" {
   type = map(object({
     # BEGIN settings-type: one attribute per repository/ input, except
     # repository_name, description, rulesets and deprecated inputs
-    # (scripts/check-type-drift.sh).
+    # (scripts/check-type-drift.py).
     settings = optional(object({
       archived               = optional(bool)
       is_private             = optional(bool)

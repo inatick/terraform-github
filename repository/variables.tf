@@ -163,7 +163,7 @@ variable "rulesets" {
   nullable    = false
   default     = {}
   # BEGIN shared-ruleset-type: keep identical in repository/ and repositories/
-  # (scripts/check-type-drift.sh). The rules object is also shared with organization/.
+  # (scripts/check-type-drift.py). The rules object is also shared with organization/.
   type = map(object({
     target      = optional(string, "branch")
     enforcement = optional(string, "active")
