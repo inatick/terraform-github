@@ -19,7 +19,7 @@ updates:
       - /examples
       - /organization
       - /repository
-      - /branch_protection
+      - /repositories
     schedule:
       interval: weekly
     cooldown:

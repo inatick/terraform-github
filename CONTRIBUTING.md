@@ -26,7 +26,13 @@ make ci              # pre-commit + validate + test, the same as CI's OpenTofu l
   OpenTofu-only syntax or features in modules. CI runs validate and test with
   both tools. See [ADR 0001](docs/adr/0001-opentofu-primary-terraform-compatible.md).
 - **No `provider` or `backend` blocks** in `organization/`, `repository/` or
-  `branch_protection/`. Consumers configure the provider.
+  `repositories/`. Consumers configure the provider.
+- **Shared types.** The ruleset type is copied in `repository/` and
+  `repositories/`, the `rules` object also in `organization/`, and
+  `repositories/`' settings type mirrors `repository/`'s inputs. Change every
+  copy together. `scripts/check-type-drift.py` (a pre-commit hook) fails if
+  they differ. A new `repository` input must also be added to the settings
+  type and the module call in `repositories/`.
 - Every module has `main.tf`, `variables.tf`, `outputs.tf` and `versions.tf`.
   TFLint enforces this.
 - Every variable and output needs a `type` (variables) and a `description`.

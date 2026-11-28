@@ -15,14 +15,6 @@ variables {
       members = ["charlie"]
     }
   }
-  organization_rulesets = {
-    protect-main = {
-      name         = "Protect main"
-      target       = "branch"
-      entity_ids   = []
-      rules_config = {}
-    }
-  }
 }
 
 run "settings_are_passed_through" {
@@ -55,20 +47,6 @@ run "teams_and_memberships_fan_out" {
   assert {
     condition     = github_team.this["product"].description == "A description of the team"
     error_message = "Teams without a description should get the default description."
-  }
-}
-
-run "rulesets_are_active" {
-  command = plan
-
-  assert {
-    condition     = github_organization_ruleset.this["protect-main"].name == "Protect main" && github_organization_ruleset.this["protect-main"].target == "branch"
-    error_message = "Ruleset name and target should follow the input."
-  }
-
-  assert {
-    condition     = github_organization_ruleset.this["protect-main"].enforcement == "active"
-    error_message = "Rulesets should be actively enforced."
   }
 }
 

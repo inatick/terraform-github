@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Reusable OpenTofu modules for managing GitHub organizations, teams, repositories
-and branch protection. Built and tested with OpenTofu, and kept compatible with
+and rulesets. Built and tested with OpenTofu, and kept compatible with
 Terraform.
 
 This repository contains **modules only**. It has no backend and manages no
@@ -16,39 +16,59 @@ real state. Use the modules from your own root configuration.
 | Module | Manages |
 |--------|---------|
 | [`organization`](organization/README.md) | Organization settings, teams and memberships, organization rulesets |
-| [`repository`](repository/README.md) | A repository's visibility, merge methods, features and templates (private and squash-only by default) |
-| [`branch_protection`](branch_protection/README.md) | A branch protection rule (admins included, no force pushes or deletions by default) |
+| [`repository`](repository/README.md) | One repository and its rulesets (private and squash-only by default) |
+| [`repositories`](repositories/README.md) | Many repositories from shared **profiles**: define settings and rulesets once, apply them everywhere, override per repository |
 
-[`examples/`](examples/README.md) wires all three together, and CI plans it
-against a mocked provider.
+[`examples/`](examples/README.md) shows `repositories` with profiles and the
+`organization` module, and CI plans it against a mocked provider.
 
 ## Usage
 
 Reference a module by its subdirectory and pin a released tag:
 
 ```hcl
-module "repo" {
-  source = "git::https://github.com/inatick/terraform-github.git//repository?ref=v1.0.0"
+module "repos" {
+  source = "git::https://github.com/inatick/terraform-github.git//repositories?ref=v2.0.0"
 
-  repository_name = "api-service"
-  description     = "The main API service"
-}
+  owner            = "my-org"
+  default_profiles = ["protected"]
 
-module "main_protection" {
-  source = "git::https://github.com/inatick/terraform-github.git//branch_protection?ref=v1.0.0"
+  profiles = {
+    protected = {
+      settings = { delete_branch_on_merge = true }
+      rulesets = {
+        protect-default-branch = {
+          rules = { pull_request = { required_approving_review_count = 1 } }
+        }
+      }
+    }
+  }
 
-  repository_id = module.repo.repository_id
-  branch        = "main"
-  required_pull_request_reviews = {
-    dismiss_stale_reviews           = true
-    required_approving_review_count = 1
+  repositories = {
+    api-service = { description = "The main API service", settings = { is_private = false } }
+    web-app     = { description = "The web front end", settings = { is_private = false } }
   }
 }
 ```
 
+For a single repository, use the [`repository`](repository/README.md) module
+and its `rulesets` input directly.
+
 Configure the `integrations/github` provider in your root configuration, for
 example with `GITHUB_TOKEN` and `GITHUB_OWNER` in the environment. The modules
 don't contain provider blocks.
+
+## GitHub plan requirements
+
+| Feature | Free | Team and above |
+|---------|------|----------------|
+| Repository settings, teams, profiles | yes | yes |
+| Repository rulesets | public repositories only | all repositories |
+| Organization rulesets | no | yes |
+
+The `repositories` module checks the organization's plan and fails at plan time
+if a private repository on GitHub Free has rulesets, unless you set
+`on_unsupported_rulesets = "skip"`.
 
 ## Compatibility
 
@@ -75,6 +95,66 @@ automatically. Release notes are on the
   ID), which fixes passing `module.<repo>.repository_id` into it. Numeric values
   still work.
 
+**Upgrading to `v2`** (from `v1.x`):
+
+`v2.0.0` removes:
+
+- the `branch_protection` module (use rulesets)
+- the `repository` inputs `has_branch_protection` and
+  `branch_protection_config`, which were never used
+- the `organization` inputs `organization_rulesets` (use `rulesets`) and
+  `projects`, which was never used
+
+`v2.0.0` also adds repository rulesets, organization `rulesets` and the
+`repositories` module.
+
+Migrate in this order, so that no branch is ever unprotected and no
+repository is recreated. Each module call has its own `?ref=`, so you can keep
+`branch_protection` on `v1.0.0` while the other modules move to `v2.0.0`:
+
+1. Bump the `repository` and `organization` module calls to `?ref=v2.0.0`.
+   Remove the inputs that no longer exist (`has_branch_protection`,
+   `branch_protection_config`, `projects`), and add the ruleset that replaces
+   each `branch_protection` call. Leave the `branch_protection` calls on
+   `?ref=v1.0.0` for now, and apply. Rulesets and classic protection can exist
+   together, so the branch stays protected throughout. For example:
+
+   ```hcl
+   module "repo" {
+     source = "git::https://github.com/inatick/terraform-github.git//repository?ref=v2.0.0"
+
+     repository_name = "api-service"
+     rulesets = {
+       # Replaces module "main_protection" (branch_protection, branch = "main").
+       protect-default-branch = {
+         rules = {
+           pull_request = {
+             required_approving_review_count = 1
+             dismiss_stale_reviews_on_push   = true
+           }
+           required_status_checks = { checks = [{ context = "ci-ok" }] }
+         }
+       }
+     }
+   }
+   ```
+
+   `enforce_admins = true` has no direct equivalent. Rulesets apply to
+   everyone who isn't a bypass actor, so leave `bypass_actors` empty to get the
+   same effect.
+2. Remove the `branch_protection` module calls and apply. The plan should
+   destroy only the `github_branch_protection` resources, which deletes the
+   classic rules.
+3. If you used `organization_rulesets`, replace it with `rulesets` (GitHub
+   Team or above). The old deletion-only ruleset
+   (`github_organization_ruleset.this`) is destroyed and the new ones are
+   created. Do this in the same change as step 1 for the `organization` module.
+4. Optionally, move per-repository `module "repository"` calls into the
+   `repositories` module with `moved` blocks. See
+   [repositories/README.md](repositories/README.md#moving-existing-repositories-into-this-module).
+   Recreating a repository would archive it, so check that the plan shows
+   `has moved to` and no create or destroy.
+
 ## Development
 
 ```bash
@@ -98,6 +178,6 @@ design decisions.
 | `allow_merge_commit` | repository | `false` | Allowed merge strategy |
 | `allow_rebase_merge` | repository | `false` | Allowed merge strategy |
 | `archive_on_destroy` | repository | `true` | Archive rather than delete on destroy |
-| `enforce_admins` | branch_protection | `true` | Admins are subject to the rule |
-| `allows_force_pushes` | branch_protection | `false` | Allow force pushes on protected branches |
-| `allows_deletions` | branch_protection | `false` | Allow deletion of protected branches |
+| `rulesets.*.rules.deletion` | repository | `true` | Block deleting the branch or tag |
+| `rulesets.*.rules.non_fast_forward` | repository | `true` | Block force pushes |
+| `on_unsupported_rulesets` | repositories | `"fail"` | Fail the plan for rulesets GitHub Free can't apply |

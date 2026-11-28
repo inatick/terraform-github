@@ -11,3 +11,5 @@ decision: add a new record that supersedes it.
 | [0003](0003-mock-provider-unit-tests.md) | Native tests with a mocked provider | Accepted |
 | [0004](0004-semantic-release-single-version.md) | semantic-release, one version for the whole repo | Accepted |
 | [0005](0005-supply-chain-hardening.md) | CI supply-chain hardening | Accepted |
+| [0006](0006-rulesets-replace-branch-protection.md) | Rulesets replace classic branch protection | Accepted |
+| [0007](0007-profiles-for-repository-config.md) | Profiles for applying shared configuration to many repositories | Accepted |
