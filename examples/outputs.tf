@@ -1,9 +1,9 @@
-output "repository_names" {
-  description = "Names of the repositories created by the example"
-  value       = [for r in module.repos : r.repository_name]
+output "repositories" {
+  description = "Map of repository name to its ID, name, URL and ruleset IDs"
+  value       = module.repos.repositories
 }
 
-output "repository_ids" {
-  description = "Map of repository key to repository ID"
-  value       = { for k, v in module.repos : k => v.repository_id }
+output "resolved" {
+  description = "The effective configuration of each repository after merging profiles"
+  value       = module.repos.resolved
 }

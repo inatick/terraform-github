@@ -1,5 +1,13 @@
 # Branch protection module
 
+> [!WARNING]
+> **Deprecated.** This module manages classic branch protection and will be
+> removed in v2.0.0. Use the `rulesets` input of the
+> [repository](../repository/README.md) module or the
+> [repositories](../repositories/README.md) module instead. To migrate without
+> a gap in protection, add the equivalent ruleset and apply, then remove this
+> module and apply again.
+
 Manages a classic branch protection rule for one branch (or pattern) of a
 repository. Defaults: admins are included, force pushes and deletions are
 blocked. Review and status-check requirements are added only when their
@@ -51,7 +59,7 @@ module "branch_protection" {
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
 | branch | The branch to protect | `string` | n/a | yes |
-| repository\_id | The name or node ID of the repository (for example the repository module's repository\_id output) | `string` | n/a | yes |
+| repository\_id | Deprecated module, use repository rulesets instead. The name or node ID of the repository (for example the repository module's repository\_id output) | `string` | n/a | yes |
 | allows\_deletions | Whether to allow deletions | `bool` | `false` | no |
 | allows\_force\_pushes | Whether to allow force pushes | `bool` | `false` | no |
 | enforce\_admins | Whether to enforce administrator privileges | `bool` | `true` | no |

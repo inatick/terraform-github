@@ -1,6 +1,6 @@
 variable "repository_id" {
   type        = string
-  description = "The name or node ID of the repository (for example the repository module's repository_id output)"
+  description = "Deprecated module, use repository rulesets instead. The name or node ID of the repository (for example the repository module's repository_id output)"
 
   validation {
     condition     = length(var.repository_id) >= 1

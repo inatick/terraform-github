@@ -89,7 +89,7 @@ jobs:
       fail-fast: false
       matrix:
         tool: [tofu, terraform]
-        dir: [organization, repository, branch_protection, examples]
+        dir: [organization, repository, repositories, branch_protection, examples]
     env:
       TOOL: ${{ matrix.tool }}
       DIR: ${{ matrix.dir }}

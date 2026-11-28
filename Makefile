@@ -2,7 +2,7 @@
 
 # Run with Terraform instead of OpenTofu: make test TOOL=terraform
 TOOL    := tofu
-MODULES := organization repository branch_protection
+MODULES := organization repository repositories branch_protection
 DIRS    := $(MODULES) examples
 
 help: ## Show this help

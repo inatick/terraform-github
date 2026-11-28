@@ -1,5 +1,79 @@
+owner = "my-org"
+
+# Applied to every repository first.
+default_profiles = ["base"]
+
+profiles = {
+  base = {
+    settings = {
+      delete_branch_on_merge = true
+      allow_update_branch    = true
+    }
+    rulesets = {
+      protect-default-branch = {
+        rules = {
+          pull_request = { required_approving_review_count = 1 }
+        }
+      }
+    }
+  }
+
+  # Public module repositories: CI must pass before merging.
+  public-module = {
+    settings = {
+      is_private      = false
+      has_discussions = true
+    }
+    rulesets = {
+      # Same name as in base, so this replaces it as a whole.
+      protect-default-branch = {
+        rules = {
+          required_linear_history = true
+          pull_request = {
+            required_approving_review_count = 0
+            allowed_merge_methods           = ["squash"]
+          }
+          required_status_checks = {
+            # 15368 is the GitHub Actions app, so only checks reported by
+            # Actions count.
+            checks = [
+              { context = "ci-ok", integration_id = 15368 },
+              { context = "Conventional PR title", integration_id = 15368 },
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+
+repositories = {
+  # Public, with the CI-gated ruleset.
+  "terraform-modules" = {
+    description = "Reusable OpenTofu modules"
+    profiles    = ["public-module"]
+  }
+
+  # Private, opting out of the inherited ruleset (rulesets on private
+  # repositories need GitHub Team).
+  "my-app" = {
+    description = "The main application"
+    settings    = { has_wiki = true }
+    rulesets    = { protect-default-branch = null }
+  }
+
+  # Private, inheriting base's ruleset. On GitHub Free, GitHub rejects
+  # rulesets on private repositories (see on_unsupported_rulesets below).
+  "internal-tools" = {
+    description = "Internal scripts and tooling"
+  }
+}
+
+# On GitHub Free, drop the rulesets of private repositories instead of failing
+# the plan. Has no effect on paid plans.
+on_unsupported_rulesets = "skip"
+
 org_config = {
-  name = "my-org"
   settings = {
     billing_email = "my@example.com"
   }
@@ -13,33 +87,15 @@ org_config = {
       members     = ["charlie"]
     }
   }
-  projects = ["Project Alpha", "Project Beta"]
-  organization_rulesets = {
-    "main-rule" = {
-      name       = "Protect all main branches"
-      target     = "branch"
-      entity_ids = []
-      rules_config = {
-        required_pull_request_review = {
-          dismiss_stale_reviews          = true
-          require_last_push_approval     = false
-          require_approving_review_count = 1
-        }
+  rulesets = {
+    "protect-default-branches" = {
+      repository_name = { include = ["~ALL"] }
+      rules = {
+        pull_request = { required_approving_review_count = 1 }
       }
     }
   }
 }
 
-repositories = {
-  "my-app-repo" = {
-    name        = "my-app-repo"
-    description = "The main application repository"
-    is_private  = true
-    branch_protection = {
-      branch = "main"
-      required_pull_request_reviews = {
-        required_approving_review_count = 2
-      }
-    }
-  }
-}
+# Organization rulesets need GitHub Team or above.
+enable_org_rulesets = false

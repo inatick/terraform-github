@@ -19,6 +19,7 @@ updates:
       - /examples
       - /organization
       - /repository
+      - /repositories
       - /branch_protection
     schedule:
       interval: weekly

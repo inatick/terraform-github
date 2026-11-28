@@ -11,23 +11,55 @@ plan or apply ([ADR 0002](adr/0002-module-repo-ci-without-plan-apply.md)).
 ## Modules
 
 ```
-               consumer root configuration
-          (provider "github" { owner = ... }, backend)
-             │                │                   │
-             ▼                ▼                   ▼
-     ┌──────────────┐  ┌──────────────┐  ┌───────────────────┐
-     │ organization │  │  repository  │──▶│ branch_protection │
-     └──────────────┘  └──────────────┘  └───────────────────┘
-      settings, teams,  github_repository  github_branch_protection
-      memberships,           │  repository_id (name) ▲
-      org rulesets           └────────────────────────┘
+                 consumer root configuration
+            (provider "github" { owner = ... }, backend)
+                 │                              │
+                 ▼                              ▼
+       ┌──────────────────────┐         ┌──────────────┐
+       │     repositories     │         │ organization │
+       │ profiles + overrides │         └──────────────┘
+       └──────────────────────┘          settings, teams,
+                 │ for_each              memberships, org
+                 ▼                       rulesets (Team plan)
+       ┌──────────────────────┐   ┌───────────────────────────┐
+       │      repository      │──▶│ github_repository_ruleset │
+       │  github_repository   │   │      (one per name)       │
+       └──────────────────────┘   └───────────────────────────┘
+
+       branch_protection: deprecated in v1.1.0, removed in v2.0.0
 ```
 
 | Module | Resources | Inputs it depends on |
 |--------|-----------|----------------------|
 | `organization` | `github_organization_settings`, `github_team`, `github_team_membership`, `github_organization_ruleset`, `data.github_organization` | none |
-| `repository` | `github_repository` | none |
-| `branch_protection` | `github_branch_protection` | `repository_id`: repository name or node ID, typically `module.<repo>.repository_id` |
+| `repository` | `github_repository`, `github_repository_ruleset` | none |
+| `repositories` | `module.repository` per repository, `data.github_organization` (plan lookup) | `owner` |
+| `branch_protection` (deprecated) | `github_branch_protection` | `repository_id`: repository name or node ID |
+
+### Profiles
+
+`repositories` merges, for each repository, its default profiles, its own
+profiles and its own `settings` and `rulesets`, in that order
+([ADR 0007](adr/0007-profiles-for-repository-config.md)). Settings merge key by
+key, ignoring unset values. Rulesets merge by name and are replaced as a whole,
+and `null` removes one. The result is the `resolved` output, and it's what
+`module.repository` receives.
+
+### Types shared between modules
+
+HCL can't share a type between modules, so the ruleset type is written in
+`repository/` and `repositories/`, the `rules` object also in `organization/`,
+and the settings type in `repositories/` mirrors `repository/`'s inputs.
+`scripts/check-type-drift.py` (a pre-commit hook, so also in CI) fails if the
+copies differ.
+
+### GitHub plan constraints
+
+On GitHub Free, rulesets only work on public repositories and organization
+rulesets don't work at all. `repositories` reads the organization's plan from
+`data.github_organization` and fails the plan, rather than the apply, when a
+private repository would get rulesets
+([ADR 0006](adr/0006-rulesets-replace-branch-protection.md)).
 
 Design constraints:
 
@@ -48,11 +80,12 @@ Design constraints:
 
 ```
 .
-├── organization/ repository/ branch_protection/
+├── organization/ repository/ repositories/ branch_protection/
 │   ├── main.tf  variables.tf  outputs.tf  versions.tf
 │   ├── README.md            # hand-written intro + terraform-docs section
 │   └── tests/*.tftest.hcl   # native tests, mocked provider
-├── examples/                # root configuration wiring all modules (+ lock file)
+├── examples/                # root configuration using profiles (+ lock file)
+├── scripts/check-type-drift.py  # keeps the shared types in sync
 │   └── tests/examples.tftest.hcl
 ├── .github/workflows/       # ci.yml, release.yml, pr-title.yml, pre-commit-autoupdate.yml
 ├── docs/architecture.md, docs/adr/
@@ -68,9 +101,10 @@ Design constraints:
  pull_request / push to main                          (no secrets in any PR job)
  ┌──────────────────────────────────────────────────────────────────────────────┐
  │ ci.yml                                                                       │
- │  lint ─────────── pre-commit: fmt, tflint, terraform-docs drift, hygiene     │
+ │  lint ─────────── pre-commit: fmt, tflint, docs and type drift, hygiene      │
  │  test (matrix) ── {tofu, terraform} × {organization, repository,             │
- │                   branch_protection, examples}: init, validate, test         │
+ │                   repositories, branch_protection, examples}: init,          │
+ │                   validate, test                                             │
  │  security ─────── Trivy IaC: SARIF to code scanning, fail on HIGH/CRITICAL   │
  │  actions-lint ─── actionlint + zizmor                                        │
  │  ci-ok ────────── aggregate; the only check the branch rules require         │

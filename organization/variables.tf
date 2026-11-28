@@ -75,5 +75,87 @@ variable "organization_rulesets" {
     rules_config = map(any)
   }))
   default     = {}
-  description = "Organization level rulesets"
+  description = "Deprecated: only creates a ruleset that blocks deletion, and ignores entity_ids and rules_config. Use rulesets instead. Will be removed in the next major release."
+}
+
+variable "rulesets" {
+  description = <<-EOT
+    Organization rulesets, keyed by ruleset name. They need GitHub Team or
+    above. The rules object is the same as the repository module's. Target
+    repositories with repository_name (default: all repositories) or
+    repository_id, not both. include defaults to the default branch for branch
+    rulesets and to all tags for tag rulesets.
+  EOT
+  nullable    = false
+  default     = {}
+  type = map(object({
+    target      = optional(string, "branch")
+    enforcement = optional(string, "active")
+    include     = optional(list(string))
+    exclude     = optional(list(string), [])
+    repository_name = optional(object({
+      include   = optional(list(string), ["~ALL"])
+      exclude   = optional(list(string), [])
+      protected = optional(bool, false)
+    }))
+    repository_id = optional(list(number))
+    bypass_actors = optional(list(object({
+      actor_type  = string
+      actor_id    = optional(number)
+      bypass_mode = optional(string, "always")
+    })), [])
+    # BEGIN shared-rules-type
+    rules = optional(object({
+      creation                = optional(bool)
+      update                  = optional(bool)
+      deletion                = optional(bool, true)
+      non_fast_forward        = optional(bool, true)
+      required_linear_history = optional(bool)
+      required_signatures     = optional(bool)
+      pull_request = optional(object({
+        required_approving_review_count   = optional(number, 1)
+        dismiss_stale_reviews_on_push     = optional(bool, true)
+        require_code_owner_review         = optional(bool, false)
+        require_last_push_approval        = optional(bool, false)
+        required_review_thread_resolution = optional(bool, true)
+        allowed_merge_methods             = optional(list(string))
+      }))
+      required_status_checks = optional(object({
+        strict                   = optional(bool, false)
+        do_not_enforce_on_create = optional(bool, false)
+        checks = list(object({
+          context        = string
+          integration_id = optional(number)
+        }))
+      }))
+    }), {})
+    # END shared-rules-type
+  }))
+
+  validation {
+    condition     = alltrue([for r in values(var.rulesets) : !(r.repository_name != null && r.repository_id != null)])
+    error_message = "Set repository_name or repository_id on an organization ruleset, not both."
+  }
+
+  validation {
+    condition     = alltrue([for r in values(var.rulesets) : contains(["branch", "tag"], r.target)])
+    error_message = "Ruleset target must be \"branch\" or \"tag\". Push rulesets are not supported."
+  }
+
+  validation {
+    condition     = alltrue([for r in values(var.rulesets) : contains(["active", "disabled"], r.enforcement)])
+    error_message = "Ruleset enforcement must be \"active\" or \"disabled\". \"evaluate\" needs GitHub Enterprise and is not supported."
+  }
+
+  validation {
+    condition = alltrue(flatten([for r in values(var.rulesets) : [
+      for a in r.bypass_actors : contains(["Integration", "OrganizationAdmin", "RepositoryRole", "Team", "DeployKey"], a.actor_type) && contains(["always", "pull_request"], a.bypass_mode)
+    ]]))
+    error_message = "Bypass actor actor_type must be one of Integration, OrganizationAdmin, RepositoryRole, Team or DeployKey, and bypass_mode must be \"always\" or \"pull_request\"."
+  }
+
+  validation {
+    condition     = alltrue([for r in values(var.rulesets) : try(length(r.rules.required_status_checks.checks) > 0, true)])
+    error_message = "required_status_checks.checks must list at least one check."
+  }
 }

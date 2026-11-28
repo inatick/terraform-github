@@ -74,3 +74,18 @@ run "outputs_repository_name" {
     error_message = "repository_name output should match the input."
   }
 }
+
+run "null_settings_use_the_defaults" {
+  command = plan
+
+  variables {
+    is_private         = null
+    allow_merge_commit = null
+    archive_on_destroy = null
+  }
+
+  assert {
+    condition     = github_repository.this.visibility == "private" && !github_repository.this.allow_merge_commit && github_repository.this.archive_on_destroy
+    error_message = "Passing null should fall back to the secure defaults (the repositories module relies on this)."
+  }
+}
