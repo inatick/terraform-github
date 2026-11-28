@@ -1,3 +1,4 @@
 output "team_ids" {
-  value = { for k, v in github_team.this : k => v.id }
+  description = "Map of team key to GitHub team ID"
+  value       = { for k, v in github_team.this : k => v.id }
 }

@@ -1,14 +1,3 @@
-terraform {
-  required_version = ">= 1.0.0"
-
-  required_providers {
-    github = {
-      source  = "integrations/github"
-      version = "~> 6.0"
-    }
-  }
-}
-
 resource "github_branch_protection" "this" {
   repository_id = var.repository_id
   pattern       = var.branch

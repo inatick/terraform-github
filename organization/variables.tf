@@ -60,10 +60,11 @@ variable "teams" {
   description = "A map of teams and their members"
 }
 
+# tflint-ignore: terraform_unused_declarations
 variable "projects" {
   type        = list(string)
   default     = []
-  description = "List of project names to create"
+  description = "Deprecated: not used by this module and will be removed in a future major release."
 }
 
 variable "organization_rulesets" {

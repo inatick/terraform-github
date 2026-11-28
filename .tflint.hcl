@@ -3,13 +3,13 @@ config {
   force            = false
 }
 
-plugin "aws" {
+plugin "terraform" {
   enabled = true
-  version = "0.30.0"
-  source  = "github.com/terraform-linters/tflint-ruleset-aws"
+  version = "0.17.0"
+  source  = "github.com/terraform-linters/tflint-ruleset-terraform"
+  preset  = "recommended"
 }
 
-# Core Terraform rules
 rule "terraform_deprecated_interpolation" {
   enabled = true
 }

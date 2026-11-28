@@ -1,14 +1,5 @@
-terraform {
-  required_version = ">= 1.0.0"
-
-  required_providers {
-    github = {
-      source  = "integrations/github"
-      version = "~> 6.0"
-    }
-  }
-}
-
+# Looked up so that plans fail early if org_name does not exist.
+# tflint-ignore: terraform_unused_declarations
 data "github_organization" "this" {
   name = var.org_name
 }

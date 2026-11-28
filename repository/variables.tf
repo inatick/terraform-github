@@ -73,12 +73,14 @@ variable "archive_on_destroy" {
   description = "Whether to archive the repository instead of deleting it on destroy"
 }
 
+# tflint-ignore: terraform_unused_declarations
 variable "has_branch_protection" {
   type        = bool
   default     = false
-  description = "Whether to apply branch protection"
+  description = "Deprecated: not used; use the branch_protection module instead. Will be removed in a future major release."
 }
 
+# tflint-ignore: terraform_unused_declarations
 variable "branch_protection_config" {
   type = object({
     branch                        = string
@@ -89,7 +91,7 @@ variable "branch_protection_config" {
     required_status_checks        = optional(bool)
   })
   default     = null
-  description = "Configuration for branch protection"
+  description = "Deprecated: not used; use the branch_protection module instead. Will be removed in a future major release."
 }
 
 variable "has_issues" {
