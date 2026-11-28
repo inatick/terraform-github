@@ -1,0 +1,46 @@
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: ci
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  # Provider constraints in the modules and the example's lock file.
+  - package-ecosystem: terraform
+    directories:
+      - /examples
+      - /organization
+      - /repository
+      - /branch_protection
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: fix
+      prefix-development: chore
+    groups:
+      terraform-providers:
+        patterns: ["*"]
+
+  # Release tooling only (semantic-release).
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: chore
+    versioning-strategy: increase
+    groups:
+      semantic-release:
+        patterns: ["*"]
